@@ -506,6 +506,35 @@ def main(_):
             shuffle=False,
             num_workers=8,
         )
+
+    elif config.prompt_fn == "pickscore":
+        train_dataset = TextPromptDataset(config.dataset, 'train')
+        test_dataset = TextPromptDataset(config.dataset, 'test')
+
+        train_sampler = DistributedKRepeatSampler(
+            dataset=train_dataset,
+            batch_size=config.sample.train_batch_size,
+            k=config.sample.num_image_per_prompt,
+            num_replicas=accelerator.num_processes,
+            rank=accelerator.process_index,
+            seed=42
+        )
+
+        train_dataloader = DataLoader(
+            train_dataset,
+            batch_sampler=train_sampler,
+            num_workers=1,
+            collate_fn=TextPromptDataset.collate_fn,
+            # persistent_workers=True
+        )
+
+        test_dataloader = DataLoader(
+            test_dataset,
+            batch_size=config.sample.test_batch_size,
+            collate_fn=TextPromptDataset.collate_fn,
+            shuffle=False,
+            num_workers=8,
+        )
     
     elif config.prompt_fn == "geneval":
         train_dataset = GenevalPromptDataset(config.dataset, 'train')
