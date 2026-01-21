@@ -26,6 +26,63 @@ def compressibility():
     config.per_prompt_stat_tracking = True
     return config
 
+def pickscore_sd3_4gpu():
+    """
+    PickScore SD3 配置 - 4x A6000 (48GB) 优化
+    """
+    # 基础设置
+    gpu_number = 4  # 🔧 关键修改
+    config = compressibility()
+    
+    # 模型与数据集路径
+    config.dataset = os.path.join(os.getcwd(), "dataset/pickscore")
+    config.pretrained.model = "/home/stang/storage/temp_code/pretrained_weights/sd35-medium"
+    config.save_dir = 'logs/pickscore/sd3.5-M-4gpu'
+    
+    # 采样与分辨率设置
+    config.resolution = 512
+    config.sample.num_steps = 10
+    config.sample.eval_num_steps = 40
+    config.sample.guidance_scale = 4.5
+    config.sample.global_std = True
+    config.sample.num_image_per_prompt = 8  # 减小组大小以适应显存
+    
+    # 训练批次设置 (A6000 有 48GB，适当增大 batch size)
+    config.sample.train_batch_size = 2
+    config.train.batch_size = config.sample.train_batch_size
+    
+    # 计算逻辑
+    # 这里的公式确保 num_batches_per_epoch 与显存和 GPU 数量挂钩
+    config.sample.num_batches_per_epoch = int(
+        48 / (gpu_number * config.sample.train_batch_size / config.sample.num_image_per_prompt)
+    )
+    config.train.gradient_accumulation_steps = max(config.sample.num_batches_per_epoch // 2, 1)
+
+    # 训练超参数
+    config.train.cfg = True
+    config.train.num_inner_epochs = 1
+    config.train.timestep_fraction = 0.99
+    config.train.beta = 0.01
+    config.train.learning_rate = 1e-4
+    config.train.ema = True
+    
+    # ===== 显存与硬件优化 =====
+    config.train.use_8bit_adam = True       # 🔧 8-bit Adam 节省显存
+    config.activation_checkpointing = True  # 🔧 激活检查点，减少 ~30% 显存
+    config.use_lora = True                  # 🔧 确保使用 LoRA
+    config.mixed_precision = "bf16"         # 🔧 A6000 支持 bf16 (推荐)
+
+    # 奖励函数与策略
+    config.reward_fn = {"pickscore": 1.0}
+    config.prompt_fn = "pickscore"
+    config.per_prompt_stat_tracking = True
+
+    # 频率控制
+    config.save_freq = 5
+    config.eval_freq = 1000000
+
+    return config
+
 def general_ocr_wan2_1():
     config = compressibility()
     config.dataset = os.path.join(os.getcwd(), "dataset/ocr")

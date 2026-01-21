@@ -36,6 +36,7 @@ tqdm = partial(tqdm.tqdm, dynamic_ncols=True)
 
 FLAGS = flags.FLAGS
 config_flags.DEFINE_config_file("config", "config/base.py", "Training configuration.")
+flags.DEFINE_string("run_name", None, "Override run name for logging/checkpoints.")
 
 logger = get_logger(__name__)
 
@@ -359,15 +360,15 @@ def main(_):
         # the total number of optimizer steps to accumulate across.
         gradient_accumulation_steps=config.train.gradient_accumulation_steps * num_train_timesteps,
     )
+    if FLAGS.run_name:
+        config.run_name = FLAGS.run_name
     if accelerator.is_main_process:
+        wandb_dir = os.path.join(config.logdir, "wandb")
+        os.makedirs(wandb_dir, exist_ok=True)
         wandb.init(
-            project="flow_grpo",
+            name = config.run_name,
+            dir = wandb_dir,
         )
-        # accelerator.init_trackers(
-        #     project_name="flow-grpo",
-        #     config=config.to_dict(),
-        #     init_kwargs={"wandb": {"name": config.run_name}},
-        # )
     logger.info(f"\n{config}")
 
     # set seed (device_specific is very important to get different prompts on different devices)

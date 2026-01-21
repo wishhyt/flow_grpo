@@ -24,6 +24,9 @@ def _load_lines(path):
         return [line.strip() for line in f.readlines()]
 
 
+def pickscore():
+	return from_file(os.path.join(os.getcwd(),"dataset/pickscore/train.txt"))
+
 def from_file(path, low=None, high=None):
     prompts = _load_lines(path)[low:high]
     return random.choice(prompts), {}
