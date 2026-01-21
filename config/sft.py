@@ -105,5 +105,65 @@ def pickscore_sd3():
     return config
 
 
+def pickscore_sd3_4gpu():
+    """
+    PickScore SD3 SFT 配置 - 4x GPU 优化
+    """
+    gpu_number = 4
+    config = compressibility()
+    
+    # 模型与数据集路径
+    config.dataset = os.path.join(os.getcwd(), "dataset/pickscore")
+    config.pretrained.model = "stabilityai/stable-diffusion-3.5-medium"
+    config.save_dir = 'logs/pickscore/sd3.5-M-sft-4gpu'
+    
+    # 采样与分辨率设置
+    config.resolution = 512
+    config.sample.num_steps = 40
+    config.sample.eval_num_steps = 40
+    config.sample.guidance_scale = 4.5
+    config.sample.global_std = True
+    config.sample.num_image_per_prompt = 8  # 减小组大小以适应显存
+    
+    # 训练批次设置
+    config.sample.train_batch_size = 2
+    config.train.batch_size = config.sample.train_batch_size
+    config.sample.test_batch_size = 16
+    
+    # 计算 num_batches_per_epoch
+    config.sample.num_batches_per_epoch = int(
+        48 / (gpu_number * config.sample.train_batch_size / config.sample.num_image_per_prompt)
+    )
+    config.train.gradient_accumulation_steps = max(config.sample.num_batches_per_epoch // 2, 1)
+
+    # SFT 特有配置
+    config.train.algorithm = 'sft'
+    config.train.ref_update_step = 10000000
+
+    # 训练超参数
+    config.train.num_inner_epochs = 1
+    config.train.timestep_fraction = 0.99
+    config.train.beta = 100
+    config.train.learning_rate = 1e-4
+    config.train.ema = True
+    
+    # 显存与硬件优化
+    config.train.use_8bit_adam = True
+    config.activation_checkpointing = True
+    config.use_lora = True
+    config.mixed_precision = "bf16"
+
+    # 奖励函数与策略
+    config.reward_fn = {"pickscore": 1.0}
+    config.prompt_fn = "pickscore"
+    config.per_prompt_stat_tracking = True
+
+    # 频率控制
+    config.save_freq = 10
+    config.eval_freq = 60
+
+    return config
+
+
 def get_config(name):
     return globals()[name]()
