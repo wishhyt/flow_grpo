@@ -342,6 +342,10 @@ def main(_):
     else:
         config.run_name += "_" + unique_id
 
+    # Append unique_id to save_dir to avoid overwriting on multiple runs
+    if config.save_dir:
+        config.save_dir = os.path.join(config.save_dir, unique_id)
+
     # number of timesteps within each trajectory to train on
     num_train_timesteps = int(config.sample.num_steps * config.train.timestep_fraction)
 

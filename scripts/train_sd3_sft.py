@@ -318,6 +318,10 @@ def main(_):
     else:
         config.run_name += "_" + unique_id
 
+    # Append unique_id to save_dir to avoid overwriting on multiple runs
+    if config.save_dir:
+        config.save_dir = os.path.join(config.save_dir, unique_id)
+
     # number of timesteps within each trajectory to train on
     num_train_timesteps = int(config.sample.num_steps * config.train.timestep_fraction)
 
@@ -334,12 +338,12 @@ def main(_):
         gradient_accumulation_steps=config.train.gradient_accumulation_steps,
     )
     if accelerator.is_main_process:
-        wandb.init(project="flow_grpo")
-        # accelerator.init_trackers(
-        #     project_name="flow-grpo",
-        #     config=config.to_dict(),
-        #     init_kwargs={"wandb": {"name": config.run_name}},
-        # )
+        wandb_dir = os.path.join(config.logdir, "wandb")
+        os.makedirs(wandb_dir, exist_ok=True)
+        wandb.init(
+            name=config.run_name,
+            dir=wandb_dir,
+        )
     logger.info(f"\n{config}")
 
     # set seed (device_specific is very important to get different prompts on different devices)
@@ -485,7 +489,36 @@ def main(_):
             shuffle=False,
             num_workers=8,
         )
-    
+
+    elif config.prompt_fn == "pickscore":
+        train_dataset = TextPromptDataset(config.dataset, 'train')
+        test_dataset = TextPromptDataset(config.dataset, 'test')
+
+        train_sampler = DistributedKRepeatSampler(
+            dataset=train_dataset,
+            batch_size=config.sample.train_batch_size,
+            k=config.sample.num_image_per_prompt,
+            num_replicas=accelerator.num_processes,
+            rank=accelerator.process_index,
+            seed=42
+        )
+
+        train_dataloader = DataLoader(
+            train_dataset,
+            batch_sampler=train_sampler,
+            num_workers=1,
+            collate_fn=TextPromptDataset.collate_fn,
+            # persistent_workers=True
+        )
+
+        test_dataloader = DataLoader(
+            test_dataset,
+            batch_size=config.sample.test_batch_size,
+            collate_fn=TextPromptDataset.collate_fn,
+            shuffle=False,
+            num_workers=8,
+        )
+
     elif config.prompt_fn == "geneval":
         train_dataset = GenevalPromptDataset(config.dataset, 'train')
         test_dataset = GenevalPromptDataset(config.dataset, 'test')
