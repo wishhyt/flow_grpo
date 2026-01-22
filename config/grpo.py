@@ -217,6 +217,76 @@ def geneval_sd3():
     config.per_prompt_stat_tracking = True
     return config
 
+def general_ocr_sd14():
+    config = compressibility()
+    config.dataset = os.path.join(os.getcwd(), "dataset/ocr")
+
+    config.pretrained.model = "CompVis/stable-diffusion-v1-4"
+    config.sample.num_steps = 50
+    config.sample.eval_num_steps = 50
+    config.sample.guidance_scale = 5.0
+    config.sample.eval_guidance_scale = 5.0
+    config.sample.eta = 0.0
+
+    config.resolution = 512
+    config.sample.train_batch_size = 4
+    config.sample.num_image_per_prompt = 4
+    config.sample.num_batches_per_epoch = 2
+    config.sample.test_batch_size = 4
+
+    config.train.batch_size = config.sample.train_batch_size
+    config.train.gradient_accumulation_steps = 1
+    config.train.num_inner_epochs = 1
+    config.train.timestep_fraction = 1.0
+    config.train.beta = 0.0
+
+    config.sample.global_std = True
+    config.sample.same_latent = False
+    config.mixed_precision = "fp16"
+    config.save_dir = "logs/ocr/sd1.4"
+
+    config.reward_fn = {
+        "ocr": 1.0,
+    }
+    config.prompt_fn = "general_ocr"
+    config.per_prompt_stat_tracking = True
+    return config
+
+def geneval_sd14():
+    config = compressibility()
+    config.dataset = os.path.join(os.getcwd(), "dataset/geneval")
+
+    config.pretrained.model = "CompVis/stable-diffusion-v1-4"
+    config.sample.num_steps = 50
+    config.sample.eval_num_steps = 50
+    config.sample.guidance_scale = 5.0
+    config.sample.eval_guidance_scale = 5.0
+    config.sample.eta = 0.0
+
+    config.resolution = 512
+    config.sample.train_batch_size = 4
+    config.sample.num_image_per_prompt = 4
+    config.sample.num_batches_per_epoch = 2
+    config.sample.test_batch_size = 4
+
+    config.train.batch_size = config.sample.train_batch_size
+    config.train.gradient_accumulation_steps = 1
+    config.train.num_inner_epochs = 1
+    config.train.timestep_fraction = 1.0
+    config.train.beta = 0.0
+
+    config.sample.global_std = True
+    config.sample.same_latent = False
+    config.mixed_precision = "fp16"
+    config.save_dir = "logs/geneval/sd1.4"
+
+    config.reward_fn = {
+        "geneval": 1.0,
+    }
+    config.prompt_fn = "geneval"
+    config.per_prompt_stat_tracking = True
+    return config
+
 def geneval_sd3_fast_nocfg():
     gpu_number = 32
     config = compressibility()

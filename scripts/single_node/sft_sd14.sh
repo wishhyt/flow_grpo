@@ -1,0 +1,2 @@
+# 1 GPU
+accelerate launch --config_file scripts/accelerate_configs/multi_gpu.yaml --num_processes=1 --main_process_port 29512 scripts/train_sd14_sft.py --config config/sft.py:geneval_sd14

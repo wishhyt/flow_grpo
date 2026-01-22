@@ -13,6 +13,7 @@
 <summary><strong>2025-11-04</strong></summary>
 
 * Adding **GRPO-Guard** 🔥🔥.
+* Adding SD1.4 support (training script + configs).
 
 </details>
 
@@ -163,6 +164,7 @@ To avoid redundant downloads and potential storage waste during multi-GPU traini
 
 **Models**
 * **SD3.5**: `stabilityai/stable-diffusion-3.5-medium`
+* **SD1.4**: `CompVis/stable-diffusion-v1-4`
 * **Flux**: `black-forest-labs/FLUX.1-dev`
 
 **Reward Models**
@@ -226,6 +228,8 @@ pip install git+https://github.com/openai/CLIP.git
 ```bash
 # sd3
 bash scripts/single_node/grpo.sh
+# sd1.4
+bash scripts/single_node/grpo_sd14.sh
 # flux
 bash scripts/single_node/grpo_flux.sh
 ```
@@ -375,6 +379,7 @@ The default training script adopts full-parameter mode, whcih requires at least 
 ```bash
 bash scripts/single_node/dpo.sh
 bash scripts/single_node/sft.sh
+bash scripts/single_node/sft_sd14.sh
 ```
 Multi-node training:
 
@@ -404,6 +409,11 @@ To integrate a new model into this framework, please follow the steps below:
 
 * `flow_grpo/diffusers_patch/sd3_sde_with_logprob.py`:
   This file handles SDE sampling. In most cases, you don't need to modify it. However, if your definitions of `dt` or `velocity` differ in sign or convention, please adjust accordingly.
+
+**Example (SD1.4):**
+* `flow_grpo/diffusers_patch/sd14_pipeline_with_logprob.py`
+* `flow_grpo/diffusers_patch/sd14_ddim_with_logprob.py`
+* `scripts/train_sd14.py` and `scripts/train_sd14_sft.py`
 
 **2. Verify SDE sampling:**
 Set `noise_level = 0` in [sde\_demo.py](https://github.com/yifan123/flow_grpo/tree/main/scripts/demo/sd3_sde_demo.py) to check whether the generated images look normal. This helps verify that your SDE implementation is correct.
